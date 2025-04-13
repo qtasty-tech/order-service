@@ -1,10 +1,25 @@
-// order-service/src/controllers/orderController.js
 const orderService = require('../services/orderService');
+const { getMenuAvailability } = require('../utils/restaurantClient'); // Utility to call Restaurant Service
 
-// Create an order
+/**
+ * Create an order.
+ * Before creating the order, check the Restaurant Service for menu availability.
+ */
 const createOrder = async (req, res) => {
   try {
     const orderData = req.body;
+    // Extract token to pass along to the Restaurant Service (if needed)
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    // Check menu availability from Restaurant Service.
+    // Here, orderData.restaurant should contain the restaurant ID.
+    const menuAvailability = await getMenuAvailability(orderData.restaurant, token);
+
+    if (!menuAvailability || !menuAvailability.menu || menuAvailability.menu.length === 0) {
+      return res.status(400).json({ message: 'Menu not available for the selected restaurant' });
+    }
+
+    // Proceed to create the order.
     const order = await orderService.createOrder(orderData);
     res.status(201).json({ message: 'Order created successfully', order });
   } catch (error) {
@@ -12,7 +27,9 @@ const createOrder = async (req, res) => {
   }
 };
 
-// Get an order by ID
+/**
+ * Get an order by ID.
+ */
 const getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -23,7 +40,9 @@ const getOrderById = async (req, res) => {
   }
 };
 
-// Get all orders for a user
+/**
+ * Get all orders for a specific user.
+ */
 const getOrdersByUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -34,7 +53,9 @@ const getOrdersByUser = async (req, res) => {
   }
 };
 
-// Update order status
+/**
+ * Update order status.
+ */
 const updateOrderStatus = async (req, res) => {
   try {
     const { orderId, status } = req.params;
