@@ -1,15 +1,17 @@
+// order-service/src/index.js
 const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config();
+const orderRoutes = require('./routes/orderRoutes');
+const authMiddleware = require('./middleware/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 7000;
 
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('Order Service is Running...');
-});
+// Use order routes
+app.use('/api/orders', orderRoutes);
 
 mongoose.connect(process.env.MONGO_URL)
   .then(() => {
@@ -18,4 +20,6 @@ mongoose.connect(process.env.MONGO_URL)
       console.log(`Order Service running on port ${PORT}`);
     });
   })
-  .catch(err => console.log(err));
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+  });
