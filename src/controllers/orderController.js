@@ -144,6 +144,8 @@ const updateOrderStatus = async (req, res) => {
     }
 
     if (status === 'ready') {
+      
+      await connectProducer();
       await produceOrderReadyEvent(updatedOrder);
     }
 
@@ -152,7 +154,6 @@ const updateOrderStatus = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
-
 module.exports = {
   createOrder,
   getOrderById,
