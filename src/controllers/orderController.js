@@ -38,12 +38,12 @@ const getOrderById = async (req, res) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     const order = await orderService.getOrderById(orderId);  
     // Fetch user details
-    const userResponse = await axios.get(`http://localhost:5000/api/users/${order.user}`, {
+    const userResponse = await axios.get(`http://user-service:5000/api/users/${order.user}`, {
       headers: { Authorization: `Bearer ${token}` },
     }).catch(() => ({ data: { _id: order.user, name: 'Unknown Customer' } }));
 
     // Fetch restaurant details
-    const restaurantResponse = await axios.get(`http://localhost:5001/api/restaurants/${order.restaurant}`, {
+    const restaurantResponse = await axios.get(`http://restaurant-service:5001/api/restaurants/${order.restaurant}`, {
       headers: { Authorization: `Bearer ${token}` },
     }).catch(() => ({ data: { _id: order.restaurant, name: 'Unknown Restaurant' } }));
 
@@ -70,11 +70,11 @@ const getOrdersByUser = async (req, res) => {
     const orders = await orderService.getOrdersByUser(userId);
     const ordersWithDetails = await Promise.all(
       orders.map(async (order) => {
-        const userResponse = await axios.get(`http://localhost:5000/api/users/${order.user}`, {
+        const userResponse = await axios.get(`http://user-service:5000/api/users/${order.user}`, {
           headers: { Authorization: `Bearer ${token}` },
         }).catch(() => ({ data: { _id: order.user, name: 'Unknown Customer' } }));
 
-        const restaurantResponse = await axios.get(`http://localhost:5001/api/restaurants/${order.restaurant}`, {
+        const restaurantResponse = await axios.get(`http://restaurant-service:5001/api/restaurants/${order.restaurant}`, {
           headers: { Authorization: `Bearer ${token}` },
         }).catch(() => ({ data: { _id: order.restaurant, name: 'Unknown Restaurant' } }));
 
@@ -103,11 +103,11 @@ const getOrdersByRestaurant = async (req, res) => {
 
     const ordersWithDetails = await Promise.all(
       orders.map(async (order) => {
-        const userResponse = await axios.get(`http://localhost:5000/api/auth/${order.user}`, {
+        const userResponse = await axios.get(`http://user-service:5000/api/auth/${order.user}`, {
           headers: { Authorization: `Bearer ${token}` },
         }).catch(() => ({ data: { _id: order.user, name: 'Unknown Customer' } }));
 
-        const restaurantResponse = await axios.get(`http://localhost:5001/api/restaurants/${order.restaurant}`, {
+        const restaurantResponse = await axios.get(`http://restaurant-service:5001/api/restaurants/${order.restaurant}`, {
           headers: { Authorization: `Bearer ${token}` },
         }).catch(() => ({ data: { _id: order.restaurant, name: 'Unknown Restaurant' } }));
 
