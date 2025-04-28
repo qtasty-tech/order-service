@@ -8,11 +8,17 @@ const axios = require('axios');
  */
 const getMenuAvailability = async (restaurantId, token) => {
   try {
-    const response = await axios.get(`http://restaurant-service:3000/api/restaurants/menu`, {
+    // const response = await axios.get(`http://restaurant-service:3000/api/restaurants/menu`, {
+    //   headers: { Authorization: `Bearer ${token}` },
+    //   params: { restaurantId }  // Pass restaurantId as a query parameter
+    // });
+
+    const response = await axios.get(`http://localhost:5001/api/restaurants/${restaurantId}/menu`, {
       headers: { Authorization: `Bearer ${token}` },
-      params: { restaurantId }  // Pass restaurantId as a query parameter
+      params: { restaurantId }  
     });
-    return response.data;  // Should return an object with a 'menu' property
+    const menuItems = response.data.categories?.flatMap(category => category.items) || [];
+    return { menu: menuItems };
   } catch (error) {
     console.error('Error checking menu availability:', error.message);
     throw error;

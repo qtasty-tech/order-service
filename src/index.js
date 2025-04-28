@@ -2,6 +2,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config();
+const cors = require('cors');
 const orderRoutes = require('./routes/orderRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 
@@ -9,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 7000;
 
 app.use(express.json());
-
+app.use(cors())
 // Use order routes
 app.use('/api/orders', orderRoutes);
 

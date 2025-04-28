@@ -19,6 +19,12 @@ const getOrdersByUser = async (userId) => {
   return orders;
 };
 
+// Get all orders for a restaurant
+const getOrdersByRestaurant = async (restaurantId) => {
+  const orders = await orderRepository.getOrdersByRestaurant(restaurantId);
+  return orders;
+};
+
 // Update order status
 const updateOrderStatus = async (orderId, status) => {
   const updatedOrder = await orderRepository.updateOrderStatus(orderId, status);
@@ -30,4 +36,5 @@ module.exports = {
   getOrderById,
   getOrdersByUser,
   updateOrderStatus,
+  getOrdersByRestaurant
 };

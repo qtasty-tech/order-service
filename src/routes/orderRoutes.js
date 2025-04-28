@@ -12,6 +12,9 @@ router.get('/:orderId', authMiddleware, orderController.getOrderById);
 // Get all orders for a user (protected route)
 router.get('/user/:userId', authMiddleware, orderController.getOrdersByUser);
 
+// Get all orders for a restaurant (protected route)
+router.get('/restaurant/:restaurantId', authMiddleware, orderController.getOrdersByRestaurant);
+
 // Update order status (protected route)
 router.put('/:orderId/status/:status', authMiddleware, orderController.updateOrderStatus);
 

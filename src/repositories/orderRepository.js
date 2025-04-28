@@ -10,12 +10,17 @@ const createOrder = async (orderData) => {
 
 // Get order by ID
 const getOrderById = async (orderId) => {
-  return await Order.findById(orderId).populate('user').populate('restaurant');
+  return await Order.findById(orderId);
 };
 
 // Get all orders for a user
 const getOrdersByUser = async (userId) => {
-  return await Order.find({ user: userId }).populate('restaurant');
+  return await Order.find({ user: userId });
+};
+
+// Get all orders for a restaurant
+const getOrdersByRestaurant = async (restaurantId) => {
+  return await Order.find({ restaurant: restaurantId }).sort({ createdAt: -1 });
 };
 
 // Update order status
@@ -28,4 +33,5 @@ module.exports = {
   getOrderById,
   getOrdersByUser,
   updateOrderStatus,
+  getOrdersByRestaurant
 };

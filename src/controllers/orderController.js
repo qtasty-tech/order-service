@@ -1,5 +1,7 @@
+const { produceOrderReadyEvent } = require('../kafka/producer');
 const orderService = require('../services/orderService');
 const { getMenuAvailability } = require('../utils/restaurantClient'); // Utility to call Restaurant Service
+const axios = require('axios');
 
 /**
  * Create an order.
@@ -33,7 +35,25 @@ const createOrder = async (req, res) => {
 const getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const order = await orderService.getOrderById(orderId);
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const order = await orderService.getOrderById(orderId);  
+    // Fetch user details
+    const userResponse = await axios.get(`http://localhost:5000/api/users/${order.user}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => ({ data: { _id: order.user, name: 'Unknown Customer' } }));
+
+    // Fetch restaurant details
+    const restaurantResponse = await axios.get(`http://localhost:5001/api/restaurants/${order.restaurant}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => ({ data: { _id: order.restaurant, name: 'Unknown Restaurant' } }));
+
+    res.status(200).json({
+      order: {
+        ...order.toJSON(),
+        user: userResponse.data,
+        restaurant: restaurantResponse.data,
+      },
+    });
     res.status(200).json({ order });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -46,8 +66,60 @@ const getOrderById = async (req, res) => {
 const getOrdersByUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
     const orders = await orderService.getOrdersByUser(userId);
-    res.status(200).json({ orders });
+    const ordersWithDetails = await Promise.all(
+      orders.map(async (order) => {
+        const userResponse = await axios.get(`http://localhost:5000/api/users/${order.user}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => ({ data: { _id: order.user, name: 'Unknown Customer' } }));
+
+        const restaurantResponse = await axios.get(`http://localhost:5001/api/restaurants/${order.restaurant}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => ({ data: { _id: order.restaurant, name: 'Unknown Restaurant' } }));
+
+        return {
+          ...order.toJSON(),
+          user: userResponse.data,
+          restaurant: restaurantResponse.data,
+        };
+      })
+    );
+
+    res.status(200).json({ orders: ordersWithDetails });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * Get all orders for a specific restaurant.
+ */
+const getOrdersByRestaurant = async (req, res) => {
+  try {
+    const { restaurantId } = req.params;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const orders = await orderService.getOrdersByRestaurant(restaurantId);
+
+    const ordersWithDetails = await Promise.all(
+      orders.map(async (order) => {
+        const userResponse = await axios.get(`http://localhost:5000/api/auth/${order.user}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => ({ data: { _id: order.user, name: 'Unknown Customer' } }));
+
+        const restaurantResponse = await axios.get(`http://localhost:5001/api/restaurants/${order.restaurant}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => ({ data: { _id: order.restaurant, name: 'Unknown Restaurant' } }));
+
+        return {
+          ...order.toJSON(),
+          user: userResponse.data,
+          restaurant: restaurantResponse.data,
+        };
+      })
+    );
+
+    res.status(200).json({ orders: ordersWithDetails });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -59,7 +131,22 @@ const getOrdersByUser = async (req, res) => {
 const updateOrderStatus = async (req, res) => {
   try {
     const { orderId, status } = req.params;
+
+    const validStatuses = ['pending', 'accepted', 'preparing', 'ready', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
     const updatedOrder = await orderService.updateOrderStatus(orderId, status);
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (status === 'ready') {
+      await produceOrderReadyEvent(updatedOrder);
+    }
+
     res.status(200).json({ message: 'Order status updated', updatedOrder });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -71,4 +158,5 @@ module.exports = {
   getOrderById,
   getOrdersByUser,
   updateOrderStatus,
+  getOrdersByRestaurant
 };
