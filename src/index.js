@@ -5,6 +5,7 @@ require('dotenv').config();
 const cors = require('cors');
 const orderRoutes = require('./routes/orderRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
+const { connectProducer } = require('./kafka/producer');
 
 const app = express();
 const PORT = process.env.PORT || 7000;
@@ -15,8 +16,11 @@ app.use(cors())
 app.use('/api/orders', orderRoutes);
 
 mongoose.connect(process.env.MONGO_URL)
-  .then(() => {
+  .then(async () => {
     console.log('MongoDB connected');
+
+    await connectProducer();
+
     app.listen(PORT, () => {
       console.log(`Order Service running on port ${PORT}`);
     });

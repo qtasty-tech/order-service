@@ -1,4 +1,4 @@
-const { produceOrderReadyEvent } = require('../kafka/producer');
+const { produceOrderReadyEvent} = require('../kafka/producer');
 const orderService = require('../services/orderService');
 const { getMenuAvailability } = require('../utils/restaurantClient'); // Utility to call Restaurant Service
 const axios = require('axios');
@@ -144,13 +144,17 @@ const updateOrderStatus = async (req, res) => {
     }
 
     if (status === 'ready') {
-      
-      await connectProducer();
-      await produceOrderReadyEvent(updatedOrder);
+      try {
+        await produceOrderReadyEvent(updatedOrder);
+      } catch (kafkaError) {
+        console.error('Kafka error in updateOrderStatus:', kafkaError);
+        return res.status(500).json({ message: 'Order updated but failed to notify delivery service' });
+      }
     }
 
     res.status(200).json({ message: 'Order status updated', updatedOrder });
   } catch (error) {
+    console.error('Error in updateOrderStatus:', error);
     res.status(400).json({ message: error.message });
   }
 };
