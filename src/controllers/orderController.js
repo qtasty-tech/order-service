@@ -145,7 +145,8 @@ const updateOrderStatus = async (req, res) => {
 
     if (status === 'ready') {
       try {
-        await produceOrderReadyEvent(updatedOrder);
+        const token = req.headers.authorization?.split(' ')[1];
+        await produceOrderReadyEvent(updatedOrder,token);
       } catch (kafkaError) {
         console.error('Kafka error in updateOrderStatus:', kafkaError);
         return res.status(500).json({ message: 'Order updated but failed to notify delivery service' });
