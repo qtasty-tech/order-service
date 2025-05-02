@@ -17,6 +17,7 @@ const createOrder = async (req, res) => {
       restaurant,
       customer,
       phone,
+      stripePaymentIntentId,
       items,
       totalAmount,
       deliveryAddress,
@@ -68,6 +69,7 @@ const createOrder = async (req, res) => {
       restaurant,
       customer,
       phone,
+      stripePaymentIntentId,
       items: items.map(item => ({
         name: item.name,
         quantity: item.quantity,

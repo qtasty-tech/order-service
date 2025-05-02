@@ -9,6 +9,10 @@ const OrderSchema = new mongoose.Schema({
   },
   customer: { type: String },
   phone: { type: String},
+  stripePaymentIntentId: {
+    type: String, 
+    required: false 
+  },
   items: [
     {
       name: { type: String, required: true },
