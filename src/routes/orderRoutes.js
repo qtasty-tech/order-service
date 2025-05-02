@@ -1,5 +1,6 @@
 const express = require('express');
 const orderController = require('../controllers/orderController');
+const metricsController = require('../controllers/metricsController');
 const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
 
@@ -17,5 +18,9 @@ router.get('/restaurant/:restaurantId', authMiddleware, orderController.getOrder
 
 // Update order status (protected route)
 router.put('/:orderId/status/:status', authMiddleware, orderController.updateOrderStatus);
+
+
+// New metrics route
+router.get('/restaurant/:restaurantId/metrics', authMiddleware, metricsController.getRestaurantMetrics);
 
 module.exports = router;
