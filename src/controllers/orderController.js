@@ -2,6 +2,9 @@ const { produceOrderReadyEvent} = require('../kafka/producer');
 const orderService = require('../services/orderService');
 const { getMenuAvailability } = require('../utils/restaurantClient'); // Utility to call Restaurant Service
 const axios = require('axios');
+const Order = require('../models/Order'); // Assuming you have an Order model
+const mongoose = require('mongoose');
+
 
 /**
  * Create an order.
@@ -9,23 +12,98 @@ const axios = require('axios');
  */
 const createOrder = async (req, res) => {
   try {
-    const orderData = req.body;
-    // Extract token to pass along to the Restaurant Service (if needed)
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const {
+      user,
+      restaurant,
+      customer,
+      phone,
+      items,
+      totalAmount,
+      deliveryAddress,
+      deliverylocation, // Changed to match schema
+      paymentMethod,
+      paymentTransaction
+    } = req.body;
 
-    // Check menu availability from Restaurant Service.
-    // Here, orderData.restaurant should contain the restaurant ID.
-    const menuAvailability = await getMenuAvailability(orderData.restaurant, token);
-
-    if (!menuAvailability || !menuAvailability.menu || menuAvailability.menu.length === 0) {
-      return res.status(400).json({ message: 'Menu not available for the selected restaurant' });
+    // Validate required fields
+    if (!restaurant) {
+      return res.status(400).json({ message: 'Restaurant ID is required' });
     }
 
-    // Proceed to create the order.
-    const order = await orderService.createOrder(orderData);
-    res.status(201).json({ message: 'Order created successfully', order });
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: 'Valid items array required' });
+    }
+
+    // Validate geolocation data
+    if (!deliverylocation) {
+      return res.status(400).json({ message: 'Delivery location is required' });
+    }
+
+    if (deliverylocation.type !== 'Point') {
+      return res.status(400).json({ message: 'Invalid location type' });
+    }
+
+    if (!Array.isArray(deliverylocation.coordinates) || 
+    deliverylocation.coordinates.length !== 2) {
+      return res.status(400).json({ message: 'Invalid coordinates format' });
+    }
+
+    const [longitude, latitude] = deliverylocation.coordinates;
+    if (typeof longitude !== 'number' || typeof latitude !== 'number') {
+      return res.status(400).json({ message: 'Invalid coordinate values' });
+    }
+
+    // Validate item structure
+    for (const item of items) {
+      if (!item.name || !item.quantity || !item.price) {
+        return res.status(400).json({ 
+          message: 'Each item requires name, quantity, and price'
+        });
+      }
+    }
+
+    // Create new order with geolocation
+    const order = new Order({
+      user,
+      restaurant,
+      customer,
+      phone,
+      items: items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price
+      })),
+      totalAmount,
+      deliveryAddress,
+      deliverylocation: { // Add geolocation data
+        type: 'Point',
+        coordinates: deliverylocation.coordinates
+      },
+      paymentMethod: paymentMethod || 'payhere',
+      paymentTransaction,
+      status: 'pending'
+    });
+
+    const savedOrder = await order.save();
+
+    res.status(201).json({
+      message: 'Order created successfully',
+      order: {
+        _id: savedOrder._id,
+        restaurant: savedOrder.restaurant,
+        totalAmount: savedOrder.totalAmount,
+        status: savedOrder.status,
+        items: savedOrder.items,
+        deliveryLocation: savedOrder.deliverylocation // Return location in response
+      }
+    });
+
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Order creation error:', error);
+    res.status(500).json({
+      message: 'Error creating order',
+      error: error.message
+    });
   }
 };
 
