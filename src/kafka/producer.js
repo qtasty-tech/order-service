@@ -20,35 +20,19 @@ const connectProducer = async () => {
   }
 };
 
-const produceOrderReadyEvent = async (order,token) => {
+const produceOrderReadyEvent = async (order, token) => {
   try {
-    const userData = {
-      _id: order.user._id || order.user, // Handle both ObjectId and populated user
-      name: order.user.name || 'Unknown Customer',
-      phone: order.user.phone || 'Unknown',
-    };
 
     const orderData = {
-      _id: order._id,
-      user: userData,
-      restaurant: order.restaurant._id || order.restaurant,
-      items: order.items,
-      totalAmount: order.totalAmount,
-      status: order.status,
-      deliveryAddress: order.deliveryAddress,
-      customerLocation: order.customerLocation || { type: 'Point', coordinates: [0, 0] }, 
-      specialInstructions: order.specialInstructions || '',
-      paymentMethod: order.paymentMethod || 'unknown',
-      deliveryTime: order.deliveryTime,
-      deliveryType: order.deliveryType,
-      token: token || '', 
-      createdAt: order.createdAt,
+      data: order,
+      token: token,
     };
+    
     await producer.send({
       topic: "order-ready",
       messages: [{ value: JSON.stringify(orderData) }],
     });
-    console.log("Order-ready event sent to Kafka:", orderData._id);
+    console.log("Order-ready event sent to Kafka:", orderData.data._id);
   } catch (error) {
     console.error("Error sending message to Kafka:", error);
     throw new Error("Failed to send order-ready event to Kafka");
