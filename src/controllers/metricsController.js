@@ -143,7 +143,6 @@ const getRestaurantMetrics = async (req, res) => {
     ];
 
     const [metricsResult] = await Order.aggregate(metricsPipeline).exec();
-    console.log("Aggregation result:", JSON.stringify(metricsResult, null, 2));
 
     // Fetch paginated orders
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -154,12 +153,6 @@ const getRestaurantMetrics = async (req, res) => {
       .lean()
       .exec();
 
-    console.log(
-      "Fetched orders:",
-      orders.length,
-      "Query:",
-      JSON.stringify(ordersQuery, null, 2)
-    );
 
     // Fetch user and restaurant details for orders
     const ordersWithDetails = await Promise.all(
