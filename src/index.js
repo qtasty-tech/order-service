@@ -16,7 +16,6 @@ app.use(cors());
 app.use('/api/orders', orderRoutes);
 
 // SSE route to stream order and delivery status
-
 app.get('/api/delivery-progress/:orderId', async (req, res) => {
   const { orderId } = req.params;
 
@@ -30,12 +29,13 @@ app.get('/api/delivery-progress/:orderId', async (req, res) => {
       // Fetch order status
       const orderStatus = await getOrderStatus(orderId);
 
-      // If order status is completed, fetch delivery status
+      // Send the order status to frontend
+      res.write(`data: ${JSON.stringify({ orderStatus })}\n\n`);
+
+      // If order status is completed, fetch delivery status from the delivery service
       if (orderStatus === 'completed') {
         const deliveryStatus = await axios.get(`http://delivery-service:8000/api/delivery-progress/${orderId}`);
         res.write(`data: ${JSON.stringify({ orderStatus, deliveryStatus: deliveryStatus.data })}\n\n`);
-      } else {
-        res.write(`data: ${JSON.stringify({ orderStatus })}\n\n`);
       }
     } catch (error) {
       console.error('Error fetching status:', error);
@@ -52,7 +52,6 @@ app.get('/api/delivery-progress/:orderId', async (req, res) => {
     res.end();
   });
 });
-
 
 mongoose.connect(process.env.MONGO_URL)
   .then(async () => {
