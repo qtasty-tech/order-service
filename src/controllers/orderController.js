@@ -117,6 +117,7 @@ const getOrderById = async (req, res) => {
     const { orderId } = req.params;
     const token = req.header('Authorization')?.replace('Bearer ', '');
     const order = await orderService.getOrderById(orderId);  
+    
     // Fetch user details
     const userResponse = await axios.get(`http://user-service:5000/api/users/${order.user}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -127,16 +128,16 @@ const getOrderById = async (req, res) => {
       headers: { Authorization: `Bearer ${token}` },
     }).catch(() => ({ data: { _id: order.restaurant, name: 'Unknown Restaurant' } }));
 
-    res.status(200).json({
+    // Send the response only once
+    return res.status(200).json({
       order: {
         ...order.toJSON(),
         user: userResponse.data,
         restaurant: restaurantResponse.data,
       },
     });
-    res.status(200).json({ order });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(400).json({ message: error.message });
   }
 };
 
